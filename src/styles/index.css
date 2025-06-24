@@ -1,0 +1,107 @@
+@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+@import "tailwindcss";
+@config "../../tailwind.config.js";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@keyframes flicker{0%,100%{opacity:.1}33%{opacity:.3}66%{opacity:.05}}
+@keyframes scanline{0%{top:-100px}100%{top:100%}}
+@keyframes blink{0%,100%{opacity:0}50%{opacity:1}}
+
+body{margin:0;overflow:hidden;background:#111}
+
+.frame{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#111;overflow:hidden}
+
+.bezel{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:2rem;border-radius:2rem;
+    background:linear-gradient(135deg,#8f9194 0%,#66696d 50%,#9a9da1 100%);box-sizing:border-box;
+    box-shadow:inset 0 4px 8px rgba(255,255,255,.12),inset 0 -4px 12px rgba(0,0,0,.7),0 25px 50px rgba(0,0,0,.6)}
+
+.crt{position:relative;width:100%;height:100%;border-radius:1rem;overflow:hidden;
+    background:theme(colors.terminal-gray);color:theme(colors.terminal-green);
+    font-family: theme(fontFamily.mono), serif;text-transform:uppercase;
+    box-shadow:0 0 90px rgba(0,0,0,.9) inset,0 0 60px rgba(0,0,0,.8),0 0 25px rgba(0,255,0,.35);
+    transform:perspective(1200px) translateZ(0) scale(1.04);
+    font-size: 1.25rem;    /* = text-2xl w Tailwind */
+    line-height: 1.4;      /* zbliżone do leading-tight */
+}
+
+.crt::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(to bottom,rgba(16,16,16,0) 50%,rgba(0,0,0,.25) 50%);background-size:100% 8px;z-index:2}
+
+.crt::after{content:"";position:absolute;inset:0;pointer-events:none;background:rgba(16,16,16,.2);animation:flicker .3s infinite;z-index:3}
+
+.scanline{position:absolute;top:-100px;left:0;width:100%;height:100px;
+    background:linear-gradient(0deg,rgba(0,0,0,0) 0%,rgba(255,255,255,.2) 10%,rgba(0,0,0,.1) 100%);
+    opacity:.12;animation:scanline 8s linear infinite;pointer-events:none;z-index:4}
+
+.cursor{display:inline-block;animation:blink 1s steps(1) infinite}
+
+.rev{background:theme(colors.terminal-green);color:theme(colors.terminal-gray)}
+
+.word{cursor:pointer}
+.word:hover,
+.word.rev{
+    background:theme(colors.terminal-green);
+    color:theme(colors.terminal-gray);
+}
+
+/* — animacja „trzech kropek” ----------------------------------- */
+@keyframes dotPulse{
+    0%,80%,100%{opacity:0;transform:none}
+    40%{opacity:1;transform:translateY(-15%)}
+}
+/* zakłócony fade-in / glitch-in -------------------------------- */
+@keyframes glitchIn{
+    0%  {opacity:0;filter:blur(4px);transform:translateX(-2px)}
+    8%  {opacity:0.4;filter:blur(3px);transform:translateX(2px)}
+    16% {opacity:0.1;filter:blur(5px);transform:translateX(-3px)}
+    24% {opacity:0.6;filter:blur(2px);transform:translateX(1px)}
+    32% {opacity:0.3;filter:blur(4px);transform:translateX(-1px)}
+    40% {opacity:0.8;filter:blur(1px);transform:translateX(1px)}
+    100%{opacity:1;filter:none;transform:none}
+}
+/* klasy pomocnicze */
+.dots span{
+    display:inline-block;
+    width:0.7em;height:0.7em;
+    margin:0 0.2em;
+    background:theme(colors.terminal-green);
+    animation:dotPulse 1s infinite;
+}
+.dots span:nth-child(2){animation-delay:.2s}
+.dots span:nth-child(3){animation-delay:.4s}
+
+.glitch-fade{animation:glitchIn 1.4s ease-out forwards}
+
+/* ---------- uniwersalne przejścia ekranów ---------- */
+@keyframes glitchIn{
+    0%  {opacity:0;filter:blur(4px) hue-rotate(0deg);transform:translateX(-3px)}
+    12% {opacity:.4;filter:blur(3px) hue-rotate(20deg);transform:translateX(2px)}
+    24% {opacity:.1;filter:blur(5px) hue-rotate(-20deg);transform:translateX(-2px)}
+    36% {opacity:.7;filter:blur(2px);transform:translateX(1px)}
+    48% {opacity:.3;filter:blur(4px);transform:translateX(-1px)}
+    60% {opacity:.9;filter:blur(1px);transform:translateX(1px)}
+    100%{opacity:1;filter:none;transform:none}
+}
+@keyframes glitchOut{
+    0%  {opacity:1;filter:none;transform:none}
+    20% {opacity:.8;filter:blur(2px);transform:translateX(2px)}
+    40% {opacity:.3;filter:blur(4px);transform:translateX(-3px)}
+    60% {opacity:.1;filter:blur(6px) hue-rotate(15deg);transform:translateX(2px)}
+    80% {opacity:.4;filter:blur(3px);transform:translateX(-2px)}
+    100%{opacity:0;filter:blur(6px);transform:translateX(3px)}
+}
+.glitch-fade-in {animation:glitchIn .8s forwards}
+.glitch-fade-out{animation:glitchOut .8s forwards}
+
+/* wrapper dla pełnoekranowego fade */
+.fade-wrapper{width:100vw;height:100vh;overflow:hidden}
+
+@keyframes textFadeIn  { from { opacity: 0 } to { opacity: 1 } }
+@keyframes textFadeOut { from { opacity: 1 } to { opacity: 0 } }
+
+.text-fade-in  { animation: textFadeIn  .8s ease-out forwards }
+.text-fade-out { animation: textFadeOut .8s ease-in  forwards }
