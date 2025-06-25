@@ -29,7 +29,17 @@
       "key": "critical",
       "label": "Critical Attacks",
       "unlockDate": "2023-01-01T00:00:00Z",
-      "content": "There are **no random critical bursts**. Every standard attack behaves predictably, so you can say goodbye to 600-HP Avenger bursts out of nowhere. Conversely, every aimed shot is **always** a critical hit, making precision weapons reliable and skill-based."
+      "content": "There are **no random critical bursts**. Every standard attack behaves predictably, so you can say goodbye to 600-HP Avenger bursts out of nowhere. Conversely, every aimed shot is **always** a critical hit, making precision weapons reliable and skill-based.\n\n**Roll** is a constant value calculated once from the attacker’s *Luck*, applicable perks and any negative modifiers coming from the defender’s protection.\n\n**Legend**\n* **LB** – Limb Damage\n* **KD** – Knockdown\n* **KB** – Knockback",
+      "table": {
+        "headers": ["Roll", "Head", "Eyes", "Groin", "Torso", "Arms", "Legs"],
+        "rows": [
+          ["0 – 29",  "1,5",            "1,5",              "1,5",                       "1,5",              "1,5",                "1,5"],
+          ["30 – 44", "1,5",            "1,5",              "1,5",                       "1,5",              "1,5",                "1,5"],
+          ["45 – 68", "1,5 KD-5",       "1,5 LB×1.5",       "1,5 + BYPASS (10 %)",       "2 + KB",           "1,5 LB×1.5",         "1,5 LB×1.5 KD-10"],
+          ["69 – 80", "2 KD-0",         "2 LB×1.75",        "2 + BYPASS (/2)",           "2 + KB",           "2 LB×1.75",          "2 LB×1.75 KD-5"],
+          ["81 +",    "2 KD+5",         "2 LB×2",           "2 + BYPASS (ALL)",          "2,5 + KB",         "2 LB×2",             "2 LB×2 KD-0"]
+        ]
+      }
     }
   ]
 }

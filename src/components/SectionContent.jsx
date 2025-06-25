@@ -8,7 +8,7 @@ import perks    from '../data/perks.json';
 import weapons  from '../data/weapons.json';
 import classes  from '../data/classes.json';
 /* (optionally) locked sections: discord / download */
-/* import discord  from '../data/discord.json';
+/* import discord   from '../data/discord.json';
    import download from '../data/download.json'; */
 
 const map = {
@@ -21,14 +21,49 @@ const map = {
     download */
 };
 
-/* ---------- helper to render text / entries + images ---------- */
+/* ---------- helper to render text / entries + images + tables ---------- */
 function ContentBody({ data }) {
+    /* reusable table component */
+    const Table = ({ headers, rows }) => (
+        <div className="overflow-x-auto">
+            <table className="min-w-full border border-terminal-green text-sm">
+                <thead className="bg-terminal-green/10">
+                <tr>
+                    {headers.map((h, i) => (
+                        <th
+                            key={i}
+                            className="px-3 py-2 border-b border-terminal-green text-left tracking-widest uppercase"
+                        >
+                            {h}
+                        </th>
+                    ))}
+                </tr>
+                </thead>
+                <tbody>
+                {rows.map((r, i) => (
+                    <tr key={i} className={i % 2 ? 'bg-terminal-green/5' : ''}>
+                        {r.map((cell, k) => (
+                            <td
+                                key={k}
+                                className="px-3 py-2 border-b border-terminal-green whitespace-nowrap"
+                            >
+                                {cell}
+                            </td>
+                        ))}
+                    </tr>
+                ))}
+                </tbody>
+            </table>
+        </div>
+    );
+
     return (
         <div className="space-y-6">
-            {/* text or JSON entries */}
+            {/* plain text or JSON entries */}
             {data.content && (
                 <p className="whitespace-pre-line leading-relaxed">{data.content}</p>
             )}
+
             {data.entries && (
                 <ul className="list-none space-y-2">
                     {data.entries.map((e, i) => (
@@ -56,6 +91,9 @@ function ContentBody({ data }) {
                     })}
                 </div>
             )}
+
+            {/* table */}
+            {data.table && <Table headers={data.table.headers} rows={data.table.rows} />}
         </div>
     );
 }
@@ -90,7 +128,9 @@ export default function SectionContent({ section }) {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const current = useMemo(() => {
         if (!hasSubs) return data;
-        return data.subsections.find((s) => s.key === activeSub) ?? data.subsections[0];
+        return (
+            data.subsections.find((s) => s.key === activeSub) ?? data.subsections[0]
+        );
     }, [hasSubs, data, activeSub]);
 
     /* if the current subsection is still locked ------------------- */

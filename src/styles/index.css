@@ -1,15 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
-
 @import "tailwindcss";
+
 @config "../../tailwind.config.js";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-@keyframes flicker{0%,100%{opacity:.1}33%{opacity:.3}66%{opacity:.05}}
-@keyframes scanline{0%{top:-100px}100%{top:100%}}
-@keyframes blink{0%,100%{opacity:0}50%{opacity:1}}
+@keyframes flicker  { 0%,100%{opacity:.1} 33%{opacity:.3} 66%{opacity:.05}}
+@keyframes scanline { 0%{top:-100px} 100%{top:100%}}
+@keyframes blink    { 0%,100%{opacity:0} 50%{opacity:1}}
 
 body{margin:0;overflow:hidden;background:#111}
 
