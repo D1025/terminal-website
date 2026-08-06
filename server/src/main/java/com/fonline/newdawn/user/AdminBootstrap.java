@@ -25,8 +25,11 @@ public class AdminBootstrap implements ApplicationRunner {
         if (users.centralAdminExists()) return;
         String username = properties.bootstrapAdmin().username();
         String password = properties.bootstrapAdmin().password();
-        if (username == null || username.trim().length() < 3 || password == null || password.length() < 16) {
-            throw new IllegalStateException("Bootstrap admin username and a password of at least 16 characters are required.");
+        if (username == null || username.trim().length() < 3) {
+            throw new IllegalStateException("Bootstrap admin username must contain at least 3 characters.");
+        }
+        if (password == null || password.length() < 16) {
+            throw new IllegalStateException("Bootstrap admin password must contain at least 16 characters.");
         }
         users.create(username, passwords.encode(password), Role.ADMIN, true, null);
     }

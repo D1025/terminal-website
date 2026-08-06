@@ -5,7 +5,11 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/api': 'http://localhost:8080'
+      '/api': 'http://localhost:8080',
+      '/sitemap.xml': {
+        target: 'http://localhost:8080',
+        rewrite: () => '/api/v1/sitemap.xml'
+      }
     }
   }
 });

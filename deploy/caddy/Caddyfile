@@ -50,6 +50,11 @@
 	@static path /assets/*
 	header @static Cache-Control "public, max-age=31536000, immutable"
 
+	handle /sitemap.xml {
+		rewrite * /api/v1/sitemap.xml
+		reverse_proxy server:8080
+	}
+
 	handle /api/* {
 		reverse_proxy server:8080
 	}
