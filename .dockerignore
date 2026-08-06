@@ -1,0 +1,14 @@
+.git
+.github
+.idea
+.artifacts
+data
+dist
+node_modules
+server/target
+*.log
+.env
+.env.*
+!.env.example
+!.env.production.example
+

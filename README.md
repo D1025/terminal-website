@@ -2,6 +2,10 @@
 
 The project consists of a terminal-inspired React frontend and a modular Spring Boot backend. PostgreSQL stores users, wiki revisions, relationships, the search index, and release metadata. S3 stores images, attachments, and client packages; MinIO provides the local S3-compatible environment.
 
+The single-Droplet production stack uses local MinIO, automatic HTTPS, local
+PostgreSQL/MinIO backups, retention, and disk monitoring. See
+[`docs/production-deployment.md`](docs/production-deployment.md).
+
 ## Getting started
 
 Node.js, Java 21, Maven, and Docker are required.
@@ -137,11 +141,14 @@ mvn test
 
 ## Production checklist
 
+- use `compose.prod.yaml` and `.env.production`, not the development defaults;
 - run the backend behind a TLS reverse proxy with the `prod` profile enabled;
 - expose the API port only through a trusted reverse proxy that overwrites `Forwarded` and `X-Forwarded-For` headers;
 - configure unique secrets, `COOKIE_SECURE=true`, and exact `ALLOWED_ORIGINS`;
 - use a private S3 bucket, restricted IAM permissions, and a lifecycle rule for incomplete uploads;
 - store secrets in a secret manager instead of an `.env` file;
 - back up PostgreSQL and configure bucket versioning and retention;
+- monitor local storage usage and periodically test restoration from both the
+  PostgreSQL and MinIO backups;
 - scan client packages for malware and sign files or platform installers;
 - serve the frontend with an `index.html` fallback for `/wiki/*` and `/admin/*`.

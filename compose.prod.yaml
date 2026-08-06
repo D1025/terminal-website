@@ -1,0 +1,286 @@
+name: new-dawn
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:-newdawn}
+      POSTGRES_USER: ${DATABASE_USER:-newdawn}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?Set DATABASE_PASSWORD in .env.production}
+      TZ: ${TZ:-Europe/Warsaw}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - data
+    security_opt:
+      - no-new-privileges:true
+    logging: *default-logging
+
+  minio:
+    image: quay.io/minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER in .env.production}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env.production}
+      MINIO_API_CORS_ALLOW_ORIGIN: ${ALLOWED_ORIGINS:?Set ALLOWED_ORIGINS in .env.production}
+      TZ: ${TZ:-Europe/Warsaw}
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - app
+    security_opt:
+      - no-new-privileges:true
+    logging: *default-logging
+
+  minio-init:
+    image: quay.io/minio/mc:latest
+    restart: "no"
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER in .env.production}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env.production}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:?Set S3_ACCESS_KEY in .env.production}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?Set S3_SECRET_KEY in .env.production}
+      S3_BUCKET: ${S3_BUCKET:-new-dawn}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -eu
+        mc alias set local http://minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}"
+        mc mb --ignore-existing "local/$${S3_BUCKET}"
+        cat > /tmp/new-dawn-app-policy.json <<EOF
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": ["s3:GetBucketLocation", "s3:ListBucket", "s3:ListBucketMultipartUploads"],
+              "Resource": ["arn:aws:s3:::$${S3_BUCKET}"]
+            },
+            {
+              "Effect": "Allow",
+              "Action": ["s3:AbortMultipartUpload", "s3:DeleteObject", "s3:GetObject", "s3:ListMultipartUploadParts", "s3:PutObject"],
+              "Resource": ["arn:aws:s3:::$${S3_BUCKET}/*"]
+            }
+          ]
+        }
+        EOF
+        mc admin user add local "$${S3_ACCESS_KEY}" "$${S3_SECRET_KEY}"
+        mc admin policy create local new-dawn-app /tmp/new-dawn-app-policy.json
+        mc admin policy attach local new-dawn-app --user "$${S3_ACCESS_KEY}"
+        mc anonymous set none "local/$${S3_BUCKET}"
+    networks:
+      - app
+    security_opt:
+      - no-new-privileges:true
+    logging: *default-logging
+
+  server:
+    build:
+      context: ./server
+    image: new-dawn-server:local
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${DATABASE_NAME:-newdawn}
+      DATABASE_USER: ${DATABASE_USER:-newdawn}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:?Set DATABASE_PASSWORD in .env.production}
+      S3_ENDPOINT: http://minio:9000
+      S3_PUBLIC_ENDPOINT: ${S3_PUBLIC_ENDPOINT:?Set S3_PUBLIC_ENDPOINT in .env.production}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:?Set S3_ACCESS_KEY in .env.production}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?Set S3_SECRET_KEY in .env.production}
+      S3_BUCKET: ${S3_BUCKET:-new-dawn}
+      S3_REGION: us-east-1
+      S3_PATH_STYLE: "true"
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env.production}
+      JWT_ISSUER: ${JWT_ISSUER:?Set JWT_ISSUER in .env.production}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-new-dawn-api}
+      BOOTSTRAP_ADMIN_USERNAME: ${BOOTSTRAP_ADMIN_USERNAME:-admin}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:?Set BOOTSTRAP_ADMIN_PASSWORD in .env.production}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:?Set ALLOWED_ORIGINS in .env.production}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?Set PUBLIC_BASE_URL in .env.production}
+      COOKIE_SECURE: "true"
+      COOKIE_SAME_SITE: Strict
+      BACKUP_MAX_FILE_SIZE: ${BACKUP_MAX_FILE_SIZE:-2GB}
+      LEGACY_UPDATER_ENABLED: ${LEGACY_UPDATER_ENABLED:-false}
+      LEGACY_UPDATER_BIND_ADDRESS: 0.0.0.0
+      LEGACY_UPDATER_PORT: 4040
+      LEGACY_UPDATER_CHANNEL: ${LEGACY_UPDATER_CHANNEL:-STABLE}
+      LEGACY_UPDATER_GAME_FILE_NAME: ${LEGACY_UPDATER_GAME_FILE_NAME:-FOnline}
+      LEGACY_UPDATER_NEWS_URL: ${LEGACY_UPDATER_NEWS_URL:?Set LEGACY_UPDATER_NEWS_URL in .env.production}
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=60.0 -XX:+ExitOnOutOfMemoryError
+      TZ: ${TZ:-Europe/Warsaw}
+    expose:
+      - "8080"
+      - "4040"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    networks:
+      - app
+      - data
+    security_opt:
+      - no-new-privileges:true
+    logging: *default-logging
+
+  edge:
+    build:
+      context: .
+      dockerfile: deploy/caddy/Dockerfile
+    image: new-dawn-edge:local
+    restart: unless-stopped
+    depends_on:
+      server:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      ACME_EMAIL: ${ACME_EMAIL:?Set ACME_EMAIL in .env.production}
+      SITE_DOMAIN: ${SITE_DOMAIN:-fonline-nd.com}
+      UPDATER_DOMAIN: ${UPDATER_DOMAIN:-updater.fonline-nd.com}
+      STORAGE_DOMAIN: ${STORAGE_DOMAIN:-storage.fonline-nd.com}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - app
+    security_opt:
+      - no-new-privileges:true
+    logging: *default-logging
+
+  legacy-proxy:
+    image: haproxy:3.2-alpine
+    profiles: ["legacy"]
+    restart: unless-stopped
+    depends_on:
+      server:
+        condition: service_healthy
+    ports:
+      - "4040:4040"
+    volumes:
+      - ./deploy/haproxy/legacy-updater.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    networks:
+      - app
+    security_opt:
+      - no-new-privileges:true
+    logging: *default-logging
+
+  backup:
+    build:
+      context: .
+      dockerfile: deploy/backup/Dockerfile
+    image: new-dawn-maintenance:local
+    restart: unless-stopped
+    depends_on:
+      server:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: ${DATABASE_NAME:-newdawn}
+      PGUSER: ${DATABASE_USER:-newdawn}
+      PGPASSWORD: ${DATABASE_PASSWORD:?Set DATABASE_PASSWORD in .env.production}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER in .env.production}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env.production}
+      MINIO_BUCKET: ${S3_BUCKET:-new-dawn}
+      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-7}
+      BACKUP_MAX_AGE_SECONDS: ${BACKUP_MAX_AGE_SECONDS:-129600}
+      TZ: ${TZ:-Europe/Warsaw}
+    volumes:
+      - type: bind
+        source: ${BACKUP_DIRECTORY:-./data/backups}
+        target: /backups
+        bind:
+          create_host_path: true
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/backup-healthcheck.sh"]
+      interval: 5m
+      timeout: 10s
+      retries: 3
+      start_period: 10m
+    networks:
+      - app
+      - data
+    security_opt:
+      - no-new-privileges:true
+    logging: *default-logging
+
+  storage-monitor:
+    image: new-dawn-maintenance:local
+    restart: unless-stopped
+    depends_on:
+      backup:
+        condition: service_started
+    entrypoint: ["/usr/local/bin/storage-monitor.sh"]
+    environment:
+      DISK_ALERT_PERCENT: ${DISK_ALERT_PERCENT:-80}
+      DISK_CHECK_INTERVAL_SECONDS: ${DISK_CHECK_INTERVAL_SECONDS:-300}
+      DISK_ALERT_WEBHOOK_URL: ${DISK_ALERT_WEBHOOK_URL:-}
+      TZ: ${TZ:-Europe/Warsaw}
+    volumes:
+      - postgres-data:/volumes/postgres:ro
+      - minio-data:/volumes/minio:ro
+      - type: bind
+        source: ${BACKUP_DIRECTORY:-./data/backups}
+        target: /backups
+        read_only: true
+        bind:
+          create_host_path: true
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /tmp/storage-ok"]
+      interval: 5m
+      timeout: 5s
+      retries: 1
+      start_period: 2m
+    networks:
+      - app
+    security_opt:
+      - no-new-privileges:true
+    logging: *default-logging
+
+volumes:
+  postgres-data:
+  minio-data:
+  caddy-data:
+  caddy-config:
+
+networks:
+  app:
+  data:
+    internal: true
