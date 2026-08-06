@@ -6,16 +6,16 @@
       "version": "1.0",
       "date": "2025-06-01",
       "changes": [
-        "Dodano nową funkcjonalność X",
-        "Naprawiono błąd Y"
+        "Added feature X",
+        "Fixed issue Y"
       ]
     },
     {
       "version": "1.1",
       "date": "2025-06-15",
       "changes": [
-        "Zbalansowano cechę Z",
-        "Poprawki stabilności"
+        "Rebalanced feature Z",
+        "Stability improvements"
       ]
     }
   ]

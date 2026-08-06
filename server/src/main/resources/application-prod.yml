@@ -1,0 +1,9 @@
+app:
+  cookies:
+    secure: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

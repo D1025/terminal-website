@@ -1,45 +1,4 @@
 {
   "unlockDate": "2023-01-01T00:00:00Z",
-  "subsections": [
-    {
-      "key": "overview",
-      "label": "Overview",
-      "unlockDate": "2023-01-01T00:00:00Z",
-      "content": "Welcome to **FOnline: New Dawn** – a small-scale passion project built on the FOnline: Aftertimes engine, yet powered by our own fresh ideas and solutions. Our single goal is to deliver the best FOnline server ever created while putting players first. We do not monetise the game; development is driven purely by fun and the desire to reach the highest quality possible.\n\n**Why choose our server?** Because we focus on innovative mechanics, fair play and rigorous balance. Expect a combat-oriented experience where thoughtful decisions matter and randomness is minimised – the best player, not the luckiest dice roll, should win."
-    },
-    {
-      "key": "leveling",
-      "label": "Leveling System",
-      "unlockDate": "2023-01-01T00:00:00Z",
-      "content": "Simplicity comes first. Full combat readiness is achieved at **level 30** – the moment you select your class. At that stage every class is immediately available and you automatically receive every perk required for **100 %** combat efficiency. Of course, nothing stops you from levelling further if you want additional progression."
-    },
-    {
-      "key": "special",
-      "label": "SPECIAL",
-      "unlockDate": "2023-01-01T00:00:00Z",
-      "content": "During character creation you allocate your **S.P.E.C.I.A.L.** attributes. They are the cornerstone of your build: each attribute directly and significantly affects your skills. In-game you can only raise skills temporarily; changing SPECIAL later will instantly and proportionally adjust the underlying skills. SPECIAL also defines which perks your character is eligible to pick."
-    },
-    {
-      "key": "hitpoints",
-      "label": "Hit Points & Limbs",
-      "unlockDate": "2023-01-01T00:00:00Z",
-      "content": "Random critical-hit tables are gone. Every limb now has its own **hit-point pool**. If you want to cripple an arm, you must first deplete its dedicated HP bar – no more hoping for a favourable d100 roll."
-    },
-    {
-      "key": "critical",
-      "label": "Critical Attacks",
-      "unlockDate": "2023-01-01T00:00:00Z",
-      "content": "There are **no random critical bursts**. Every standard attack behaves predictably, so you can say goodbye to 600-HP Avenger bursts out of nowhere. Conversely, every aimed shot is **always** a critical hit, making precision weapons reliable and skill-based.\n\n**Roll** is a constant value calculated once from the attacker’s *Luck*, applicable perks and any negative modifiers coming from the defender’s protection.\n\n**Legend**\n* **LB** – Limb Damage\n* **KD** – Knockdown\n* **KB** – Knockback",
-      "table": {
-        "headers": ["Roll", "Head", "Eyes", "Groin", "Torso", "Arms", "Legs"],
-        "rows": [
-          ["0 – 29",  "1,5",            "1,5",              "1,5",                       "1,5",              "1,5",                "1,5"],
-          ["30 – 44", "1,5",            "1,5",              "1,5",                       "1,5",              "1,5",                "1,5"],
-          ["45 – 68", "1,5 KD-5",       "1,5 LB×1.5",       "1,5 + BYPASS (10 %)",       "2 + KB",           "1,5 LB×1.5",         "1,5 LB×1.5 KD-10"],
-          ["69 – 80", "2 KD-0",         "2 LB×1.75",        "2 + BYPASS (/2)",           "2 + KB",           "2 LB×1.75",          "2 LB×1.75 KD-5"],
-          ["81 +",    "2 KD+5",         "2 LB×2",           "2 + BYPASS (ALL)",          "2,5 + KB",         "2 LB×2",             "2 LB×2 KD-0"]
-        ]
-      }
-    }
-  ]
+  "content": "**FOnline: New Dawn** began with the FOnline: Aftertimes engine as its foundation. Over time, however, we rebuilt and improved so much of the server that very little of the original remains. Our work has focused on creating a scalable, efficient platform capable of supporting the game for years to come.\n\nEvery major mechanic was designed and implemented from the ground up. We drew on years of experience with other FOnline servers to preserve the ideas that made the genre compelling, rethink those that did not, and build our own solutions around them. We did not use source code from any other publicly available server. Particular care has gone into the design of combat systems, character classes and the way they interact.\n\n**PvP is at the heart of New Dawn.** Player conflict will drive both the economy and many of the server's events. PvE content will remain an important part of the world, with a special emphasis on **PvPvE** encounters where players, factions and the environment collide.\n\nWe believe combat should be clear, competitive and fair. Random critical hits and obscure, poorly explained mechanics have no place here. Our goal is to make victory feel earned through preparation, decision-making and skill — not won through gambling on an unpredictable roll.\n\n**Coming soon.** We plan to begin with a beta test season focused on gathering meaningful feedback from players. It will be shorter than the standard seasons we have planned, but also more intensive. Development throughout the beta will follow a weekly patch cycle, allowing us to respond quickly, make effective use of the limited season time and improve the game alongside the community.\n\n**New Dawn will be completely free to play.** We will not sell power, conveniences, skins, event access or any other in-game content. Money will provide no gameplay advantage and will not unlock experiences unavailable to other players. Everyone enters the wasteland on equal terms."
 }

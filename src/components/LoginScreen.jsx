@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 const CORRECT = 'NEWDAWN';
 const BANK = [
@@ -10,119 +10,126 @@ const BANK = [
     'NEUTRAL', 'ORBITAL', 'PIONEER', 'QUANTUM', 'REFRACT', 'STATURE', 'TRIANGLE',
     'UNIFIED', 'VIRTUAL', 'WITHERS', 'XRAYING', 'YEARLING', 'ZEALOTS'
 ];
-const SYM = '{}<>[]()/\\|!@#$%^&*-+=;:?.';
+const SYMBOLS = '{}<>[]()/\\|!@#$%^&*-+=;:?.';
 
-const r   = a => a[(Math.random() * a.length) | 0];
-const hex = () => `0x${((Math.random()*0xffff)|0).toString(16).toUpperCase().padStart(4,'0')}`;
-const alike = (a,b) => [...a].filter((c,i)=>c===b[i]).length;
+const randomItem = array => array[(Math.random() * array.length) | 0];
+const randomAddress = () => `0x${((Math.random() * 0xffff) | 0).toString(16).toUpperCase().padStart(4, '0')}`;
+const likeness = (left, right) => [...left].filter((character, index) => character === right[index]).length;
 
-/* helpers */
-function makeWords(){
-    const s=new Set();
-    while(s.size<23) s.add(r(BANK));
-    const arr=[...s].map(w=>w.toUpperCase());
-    arr.splice((Math.random()*arr.length)|0,0,CORRECT);
-    return arr;
-}
-function chunk(w){
-    const l=(Math.random()*8)|0;
-    const rp=14-w.length-l;
-    const junk=n=>Array.from({length:n},()=>r(SYM)).join('');
-    return {addr:hex(),pre:junk(l),word:w,post:junk(rp)};
-}
-function matrix(ws){
-    const ch=ws.map(chunk),out=[];
-    for(let i=0;i<ch.length;i+=2) out.push([ch[i],ch[i+1]??null]);
-    return out;
+function makeWords() {
+    const words = new Set();
+    while (words.size < 23) words.add(randomItem(BANK));
+    const result = [...words].map(word => word.toUpperCase());
+    result.splice((Math.random() * result.length) | 0, 0, CORRECT);
+    return result;
 }
 
-export default function LoginScreen({ onSuccess, fadeClass }) {
-    const rows = useMemo(() => matrix(makeWords()), []);
+function makeChunk(word) {
+    const leftLength = (Math.random() * 5) | 0;
+    const rightLength = Math.max(1, 12 - word.length - leftLength);
+    const junk = length => Array.from({ length }, () => randomItem(SYMBOLS)).join('');
+
+    return {
+        address: randomAddress(),
+        before: junk(leftLength),
+        word,
+        after: junk(rightLength)
+    };
+}
+
+export default function LoginScreen({ onSuccess }) {
+    const chunks = useMemo(() => makeWords().map(makeChunk), []);
     const [attempts, setAttempts] = useState(4);
     const [log, setLog] = useState([]);
     const [queue, setQueue] = useState([]);
     const [typing, setTyping] = useState('');
-    const [pos, setPos] = useState(0);
-    const [cursorBlink, setCursorBlink] = useState(true);
+    const [position, setPosition] = useState(0);
+    const [solved, setSolved] = useState(false);
 
     useEffect(() => {
-        const id = setInterval(() => setCursorBlink(c => !c), 450);
-        return () => clearInterval(id);
-    }, []);
-
-    useEffect(() => {
-        if (typing && pos < typing.length) {
-            const id = setTimeout(() => setPos(p => p + 1), 18);
+        if (typing && position < typing.length) {
+            const id = setTimeout(() => setPosition(current => current + 1), 18);
             return () => clearTimeout(id);
         }
-        if (typing && pos === typing.length) {
-            setLog(l => [typing, ...l]);
+
+        if (typing && position === typing.length) {
+            setLog(current => [...current, typing]);
             setTyping('');
-            setPos(0);
+            setPosition(0);
         }
+
         if (!typing && queue.length) {
             setTyping(queue[0]);
-            setQueue(q => q.slice(1));
+            setQueue(current => current.slice(1));
         }
-    }, [typing, pos, queue]);
+    }, [typing, position, queue]);
 
     function pick(word) {
+        if (solved || attempts === 0) return;
+
         if (word === CORRECT) {
-            setQueue(q => [...q, `> ${word}`, 'ACCESS GRANTED']);
+            setSolved(true);
+            setQueue(current => [...current, `> ${word}`, 'ACCESS GRANTED']);
             localStorage.setItem('logged', 'true');
-            setTimeout(onSuccess, 900);
+            setTimeout(onSuccess, 700);
             return;
         }
-        const left = attempts - 1;
-        setAttempts(left);
-        setQueue(q => [
-            ...q,
+
+        const remaining = attempts - 1;
+        setAttempts(remaining);
+        setQueue(current => [
+            ...current,
             `> ${word}`,
-            `Entry denied – likeness = ${alike(word, CORRECT)}`
+            `ENTRY DENIED // LIKENESS ${likeness(word, CORRECT)}`
         ]);
-        if (!left) setTimeout(() => location.reload(), 1200);
+
+        if (!remaining) setTimeout(() => window.location.reload(), 1100);
     }
 
     return (
-        <div className="frame">
-            <div className="bezel">
-                <div className="crt flex flex-col h-full p-10">
-                    <div className={`leading-snug space-y-2 select-none ${fadeClass}`}>
-                        <div>WELCOME TO ROBCO INDUSTRIES (TM) TERMLINK</div>
-                        <div>PASSWORD REQUIRED</div>
-                        <div>
-                            ATTEMPTS REMAINING:{' '}
-                            {'■'.repeat(attempts) + '□'.repeat(4 - attempts)}
-                        </div>
-                    </div>
-
-                    <div className="flex-1 mt-8 grid grid-cols-[auto_20rem] gap-x-20 overflow-hidden leading-tight">
-                        <pre className={`select-none ${fadeClass}`}>
-                            {rows.map((pair,i)=>(
-                                <div key={i} className="flex gap-20">
-                                    {pair.map((c,k)=>c && (
-                                        <span key={k}>
-                                            {c.addr}  {c.pre}
-                                            <span className="word" onClick={()=>pick(c.word)}>
-                                                {c.word}
-                                            </span>
-                                            {c.post}
-                                        </span>
-                                    ))}
-                                </div>
-                            ))}
-                        </pre>
-
-                        <div className={`w-80 flex flex-col-reverse overflow-hidden ${fadeClass}`}>
-                            {typing && <div>{typing.slice(0,pos)}</div>}
-                            {log.map((l,i)=><div key={i}>{l}</div>)}
-                            {!typing && !log.length && <div>{cursorBlink && '[]'}</div>}
-                        </div>
-                    </div>
-
-                    <div className="scanline" />
+        <section className="login-screen" aria-labelledby="login-title">
+            <header className="login-header">
+                <div>
+                    <p className="terminal-kicker">TECH Industries (TM) Termlink</p>
+                    <h1 id="login-title">Password required</h1>
                 </div>
+                <div className="attempts" aria-label={`${attempts} of 4 attempts remaining`}>
+                    <span>Attempts</span>
+                    <span aria-hidden="true">{'■'.repeat(attempts)}{'□'.repeat(4 - attempts)}</span>
+                </div>
+            </header>
+
+            <div className="login-layout">
+                <div className="password-grid" aria-label="Password candidates">
+                    {chunks.map(chunk => (
+                        <div className="hack-line" key={`${chunk.address}-${chunk.word}`}>
+                            <span className="memory-address" aria-hidden="true">{chunk.address}</span>
+                            <span className="junk" aria-hidden="true">{chunk.before}</span>
+                            <button
+                                type="button"
+                                className="hack-word"
+                                onClick={() => pick(chunk.word)}
+                                disabled={solved || attempts === 0}
+                                aria-label={`Try password ${chunk.word}`}
+                            >
+                                {chunk.word}
+                            </button>
+                            <span className="junk" aria-hidden="true">{chunk.after}</span>
+                        </div>
+                    ))}
+                </div>
+
+                <aside className="login-console" aria-label="Authentication log">
+                    <div className="console-label">AUTH.LOG</div>
+                    <div className="console-output" aria-live="polite">
+                        {log.map((entry, index) => <div key={`${entry}-${index}`}>{entry}</div>)}
+                        {typing && <div>{typing.slice(0, position)}</div>}
+                        {!typing && !log.length && <div>&gt; AWAITING INPUT<span className="cursor" aria-hidden="true">_</span></div>}
+                    </div>
+                </aside>
             </div>
-        </div>
+
+            <p className="screen-help">Select a candidate. Likeness is the number of letters in the correct position.</p>
+        </section>
     );
 }
