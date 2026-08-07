@@ -63,6 +63,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health/**", "/api/v1/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/sitemap.xml").permitAll()
+                        .requestMatchers(HttpMethod.HEAD, "/api/v1/sitemap.xml").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/wiki/**", "/api/v1/releases/**", "/api/v1/updates/**", "/api/v1/configuration/**").permitAll()
                         .requestMatchers("/api/v1/admin/users/**", "/api/v1/admin/releases/**", "/api/v1/admin/configuration/**",
                                 "/api/v1/admin/updates/**", "/api/v1/admin/wiki/categories/**",
