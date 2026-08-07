@@ -3,6 +3,7 @@ import { ArrowLeft, Link2, Paperclip } from 'lucide-react';
 import PublicFrame from '../components/PublicFrame';
 import WikiMarkdown from '../components/WikiMarkdown';
 import { api } from '../lib/api';
+import { applySeo, noindexCurrentPage } from '../lib/seo';
 
 export default function WikiArticle({ slug }) {
     const [page, setPage] = useState(null);
@@ -13,8 +14,24 @@ export default function WikiArticle({ slug }) {
         setError('');
         api(`/wiki/pages/${encodeURIComponent(slug)}`, { auth: true })
             .then(setPage)
-            .catch(() => setError('This wiki article could not be found.'));
+            .catch(() => {
+                setError('This wiki article could not be found.');
+                noindexCurrentPage(
+                    'Article Not Found — FOnline: New Dawn',
+                    'The requested FOnline: New Dawn wiki article could not be found.'
+                );
+            });
     }, [slug]);
+
+    useEffect(() => {
+        if (!page) return;
+        applySeo({
+            title: `${page.title} — FOnline: New Dawn Wiki`,
+            description: seoDescription(page.summary) || `Read ${page.title} in the official FOnline: New Dawn wiki.`,
+            canonicalPath: `/wiki/${encodeURIComponent(page.slug)}`,
+            type: 'article'
+        });
+    }, [page]);
 
     if (error) {
         return <PublicFrame eyebrow="Public archive" title="Article unavailable"><div className="module-empty">{error} <a href="/wiki">Return to the index.</a></div></PublicFrame>;
@@ -72,4 +89,8 @@ export default function WikiArticle({ slug }) {
             </div>
         </PublicFrame>
     );
+}
+
+function seoDescription(value = '') {
+    return value.replace(/\s+/g, ' ').trim().slice(0, 300);
 }

@@ -87,7 +87,7 @@ export default function LoginScreen({ onSuccess }) {
     }
 
     return (
-        <section className="login-screen" aria-labelledby="login-title">
+        <section className="login-screen" aria-labelledby="login-title" data-nosnippet>
             <header className="login-header">
                 <div>
                     <p className="terminal-kicker">TECH Industries (TM) Termlink</p>

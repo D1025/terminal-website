@@ -1,6 +1,7 @@
 package com.fonline.newdawn.seo;
 
 import com.fonline.newdawn.config.AppProperties;
+import com.fonline.newdawn.configuration.TimedContentAccessService;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 
@@ -18,14 +19,18 @@ public class SitemapService {
 
     private final JdbcClient jdbc;
     private final AppProperties properties;
+    private final TimedContentAccessService timedAccess;
 
-    public SitemapService(JdbcClient jdbc, AppProperties properties) {
+    public SitemapService(JdbcClient jdbc, AppProperties properties, TimedContentAccessService timedAccess) {
         this.jdbc = jdbc;
         this.properties = properties;
+        this.timedAccess = timedAccess;
     }
 
     public String render() {
-        List<WikiUrl> wikiUrls = jdbc.sql("""
+        boolean wikiPublic = timedAccess.isWikiPublic();
+        boolean downloadPublic = timedAccess.isDownloadPublic();
+        List<WikiUrl> wikiUrls = wikiPublic ? jdbc.sql("""
                 SELECT slug, updated_at
                 FROM wiki_page
                 WHERE status = 'PUBLISHED' AND published_revision_id IS NOT NULL
@@ -34,12 +39,17 @@ public class SitemapService {
                 """).param("limit", MAX_WIKI_URLS)
                 .query((rs, row) -> new WikiUrl(
                         rs.getString("slug"), rs.getTimestamp("updated_at").toInstant()))
-                .list();
+                .list() : List.of();
 
-        return render(properties.publicBaseUrl(), wikiUrls);
+        return render(properties.publicBaseUrl(), wikiUrls, wikiPublic, downloadPublic);
     }
 
     static String render(String publicBaseUrl, List<WikiUrl> wikiUrls) {
+        return render(publicBaseUrl, wikiUrls, true, true);
+    }
+
+    static String render(String publicBaseUrl, List<WikiUrl> wikiUrls,
+                         boolean wikiPublic, boolean downloadPublic) {
         String baseUrl = publicBaseUrl.replaceAll("/+$", "");
         StringWriter output = new StringWriter();
 
@@ -51,11 +61,13 @@ public class SitemapService {
             xml.writeDefaultNamespace(SITEMAP_NAMESPACE);
 
             writeUrl(xml, baseUrl + "/", null);
-            writeUrl(xml, baseUrl + "/wiki", null);
-            writeUrl(xml, baseUrl + "/download", null);
-            for (WikiUrl wikiUrl : wikiUrls) {
-                writeUrl(xml, baseUrl + "/wiki/" + wikiUrl.slug(), wikiUrl.lastModified());
+            if (wikiPublic) {
+                writeUrl(xml, baseUrl + "/wiki", null);
+                for (WikiUrl wikiUrl : wikiUrls) {
+                    writeUrl(xml, baseUrl + "/wiki/" + wikiUrl.slug(), wikiUrl.lastModified());
+                }
             }
+            if (downloadPublic) writeUrl(xml, baseUrl + "/download", null);
 
             xml.writeEndElement();
             xml.writeEndDocument();

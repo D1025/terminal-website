@@ -31,6 +31,14 @@ public class TimedContentAccessService {
         requireAccess("downloadUnlockAt", DOWNLOAD_FALLBACK, user, "Client downloads");
     }
 
+    public boolean isWikiPublic() {
+        return isPublic("wikiUnlockAt", WIKI_FALLBACK);
+    }
+
+    public boolean isDownloadPublic() {
+        return isPublic("downloadUnlockAt", DOWNLOAD_FALLBACK);
+    }
+
     private void requireAccess(String key, Instant fallback, AuthenticatedUser user, String label) {
         if (user != null) return;
         Instant unlockAt = configuredInstant(key, fallback);
@@ -38,6 +46,10 @@ public class TimedContentAccessService {
             throw new ApiException(HttpStatus.LOCKED, "CONTENT_LOCKED",
                     label + " will become public at " + unlockAt + ".");
         }
+    }
+
+    private boolean isPublic(String key, Instant fallback) {
+        return !Instant.now().isBefore(configuredInstant(key, fallback));
     }
 
     private Instant configuredInstant(String key, Instant fallback) {

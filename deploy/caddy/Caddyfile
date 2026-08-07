@@ -49,6 +49,8 @@
 
 	@static path /assets/*
 	header @static Cache-Control "public, max-age=31536000, immutable"
+	@private path /admin /admin/* /api/*
+	header @private X-Robots-Tag "noindex, nofollow"
 
 	handle /sitemap.xml {
 		rewrite * /api/v1/sitemap.xml
@@ -59,9 +61,15 @@
 		reverse_proxy server:8080
 	}
 
-	handle {
+	@spa path / /wiki /wiki/* /download /admin /admin/*
+	handle @spa {
 		root * /srv
 		try_files {path} /index.html
+		file_server
+	}
+
+	handle {
+		root * /srv
 		file_server
 	}
 }

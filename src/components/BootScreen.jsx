@@ -37,7 +37,7 @@ function BootScreen({ onFinish }) {
     const current = line < lines.length ? lines[line].slice(0, char) : '';
 
     return (
-        <section className="boot-screen" aria-labelledby="boot-title">
+        <section className="boot-screen" aria-labelledby="boot-title" data-nosnippet>
             <div>
                 <p className="terminal-kicker">TECH Unified Operating System</p>
                 <h1 id="boot-title" className="sr-only">Terminal boot sequence</h1>

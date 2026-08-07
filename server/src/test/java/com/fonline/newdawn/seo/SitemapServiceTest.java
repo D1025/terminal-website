@@ -30,4 +30,20 @@ class SitemapServiceTest {
         assertThat(xml).contains("<lastmod>2026-08-06T10:15:30Z</lastmod>");
         assertThat(xml).doesNotContain("fonline-nd.com//wiki");
     }
+
+    @Test
+    void omitsSectionsThatAreNotPublicYet() throws Exception {
+        String xml = SitemapService.render("https://fonline-nd.com", List.of(
+                new SitemapService.WikiUrl("hidden", Instant.parse("2026-08-06T10:15:30Z"))
+        ), false, false);
+
+        var documentFactory = DocumentBuilderFactory.newInstance();
+        documentFactory.setNamespaceAware(true);
+        var document = documentFactory.newDocumentBuilder().parse(
+                new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
+
+        assertThat(document.getElementsByTagNameNS("*", "loc").getLength()).isEqualTo(1);
+        assertThat(xml).contains("<loc>https://fonline-nd.com/</loc>");
+        assertThat(xml).doesNotContain("/wiki").doesNotContain("/download");
+    }
 }
